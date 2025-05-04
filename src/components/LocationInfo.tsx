@@ -58,6 +58,16 @@ export default function LocationInfo({ location }: LocationInfoProps) {
           </div>
         )}
       </div>
+
+      {location.photo_url && (
+        /* eslint-disable @next/next/no-img-element */
+        <img
+          src={location.photo_url}
+          alt={location.title}
+          className="w-full h-48 object-cover rounded-lg mb-4"
+        />
+        /* eslint-enable @next/next/no-img-element */
+      )}
     </div>
   );
 } 

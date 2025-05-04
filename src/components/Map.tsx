@@ -97,7 +97,11 @@ export default function Map() {
 
       // Cleanup
       return () => {
-        markersRef.current.forEach(marker => marker.remove());
+        /* eslint-disable react-hooks/exhaustive-deps */
+        if (markersRef.current) {
+          markersRef.current.forEach(marker => marker.remove());
+        }
+        /* eslint-enable react-hooks/exhaustive-deps */
         map.current?.remove();
       };
     } catch (err) {
