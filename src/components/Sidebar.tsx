@@ -18,22 +18,25 @@ import {
   Theater,
   ChevronDown,
   ChevronRight,
-  Menu,
   X
 } from 'lucide-react';
+import { Location } from '@/types/database';
 
 interface SidebarProps {
   isOpen: boolean;
   onClose: () => void;
   isCollapsed: boolean;
   onToggleCollapse: () => void;
+  locations: Location[];
+  onLocationSelect: (location: Location) => void;
 }
 
-export default function Sidebar({ isOpen, onClose, isCollapsed, onToggleCollapse }: SidebarProps) {
+export default function Sidebar({ isOpen, onClose, isCollapsed, onToggleCollapse, locations, onLocationSelect }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isCategoriesOpen, setIsCategoriesOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const categories = [
     { 
@@ -82,6 +85,11 @@ export default function Sidebar({ isOpen, onClose, isCollapsed, onToggleCollapse
     params.set('category', categoryId);
     router.push(`/?${params.toString()}`);
   };
+
+  const filteredLocations = locations.filter(location =>
+    location.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    location.description?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
     <>
@@ -178,6 +186,40 @@ export default function Sidebar({ isOpen, onClose, isCollapsed, onToggleCollapse
               ))}
             </ul>
           </nav>
+
+          {/* Locations */}
+          <div className="p-4 border-t border-gray-200">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-semibold">Locations</h2>
+              <button
+                onClick={onClose}
+                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <input
+              type="text"
+              placeholder="Search locations..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full px-4 py-2 mb-4 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <div className="space-y-4">
+              {filteredLocations.map((location) => (
+                <div
+                  key={location.id}
+                  onClick={() => onLocationSelect(location)}
+                  className="p-4 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
+                >
+                  <h3 className="font-semibold">{location.title}</h3>
+                  {location.description && (
+                    <p className="text-sm text-gray-600 mt-1">{location.description}</p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </aside>
     </>
