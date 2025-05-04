@@ -163,53 +163,111 @@ export default function CultureMap() {
 
     // Add new markers
     locations.forEach((location) => {
+      console.log('Creating marker for location:', location.title);
+      
       // Create custom marker element
       const el = createCustomMarker(location);
+      console.log('Marker element created:', el);
 
-      // Create popup content
+      // Create popup content with actual location data
       const popupContent = document.createElement('div');
-      const root = document.createElement('div');
-      popupContent.appendChild(root);
-      
-      // Create popup
-      const popup = new mapboxgl.Popup({ offset: 25 })
-        .setDOMContent(popupContent);
+      popupContent.innerHTML = `
+        <div style="padding: 16px; min-width: 300px; min-height: 200px; background: white;">
+          ${location.photo_url ? `
+            <div style="width: 100%; height: 200px; margin-bottom: 16px; border-radius: 8px; overflow: hidden;">
+              <img 
+                src="${location.photo_url}" 
+                alt="${location.title}" 
+                style="width: 100%; height: 100%; object-fit: cover;"
+              />
+            </div>
+          ` : ''}
+          <h3 style="font-size: 18px; font-weight: 600; margin-bottom: 8px; color: #1a1a1a;">
+            ${location.title}
+          </h3>
+          ${location.description ? `
+            <p style="font-size: 14px; color: #666; margin-bottom: 12px; line-height: 1.5;">
+              ${location.description}
+            </p>
+          ` : ''}
+          <div style="font-size: 14px; color: #666;">
+            ${location.address ? `
+              <div style="margin-bottom: 8px;">
+                <strong style="color: #333;">Address:</strong> ${location.address}
+              </div>
+            ` : ''}
+            ${location.hours ? `
+              <div style="margin-bottom: 8px;">
+                <strong style="color: #333;">Hours:</strong> ${location.hours}
+              </div>
+            ` : ''}
+            ${location.phone ? `
+              <div style="margin-bottom: 8px;">
+                <strong style="color: #333;">Phone:</strong> ${location.phone}
+              </div>
+            ` : ''}
+            ${location.website ? `
+              <div style="margin-bottom: 8px;">
+                <strong style="color: #333;">Website:</strong> 
+                <a href="${location.website}" target="_blank" rel="noopener noreferrer" 
+                   style="color: #2563eb; text-decoration: none; hover: underline;">
+                  Visit Website
+                </a>
+              </div>
+            ` : ''}
+            ${location.additional_info ? `
+              <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #eee;">
+                <strong style="color: #333;">Additional Info:</strong>
+                <p style="margin-top: 4px; color: #666;">${location.additional_info}</p>
+              </div>
+            ` : ''}
+          </div>
+        </div>
+      `;
 
-      // Create marker
-      const marker = new mapboxgl.Marker(el)
-        .setLngLat([location.longitude, location.latitude])
-        .setPopup(popup)
-        .addTo(map.current);
-
-      // Add click handler
-      el.addEventListener('click', () => {
-        setSelectedLocation(location);
+      console.log('Popup content created:', {
+        hasContent: !!popupContent.innerHTML,
+        contentLength: popupContent.innerHTML.length,
+        content: popupContent.innerHTML
       });
 
-      // Create and store popup root
-      const popupRoot = createRoot(root);
-      popupRootsRef.current.set(location.id, popupRoot);
-      popupRoot.render(<LocationPopup location={location} popup={popup} />);
+      // Create popup with improved configuration
+      const popup = new mapboxgl.Popup({
+        offset: 25,
+        closeButton: true,
+        closeOnClick: false,
+        maxWidth: '300px',
+        anchor: 'bottom',
+        className: 'custom-popup',
+        focusAfterOpen: false,
+        autoPan: true,
+        autoPanSpeed: 10,
+        autoPanPadding: { top: 50, bottom: 50, left: 50, right: 50 }
+      });
 
-      // Add cleanup handler for popup
-      popup.on('close', () => {
-        const root = popupRootsRef.current.get(location.id);
-        if (root) {
-          // Use setTimeout to ensure we're not unmounting during render
-          setTimeout(() => {
-            try {
-              root.unmount();
-              popupRootsRef.current.delete(location.id);
-            } catch (err) {
-              console.warn(`Error cleaning up popup for ${location.id}:`, err);
-            }
-          }, 0);
-        }
+      // Create marker and explicitly attach popup
+      const marker = new mapboxgl.Marker(el)
+        .setLngLat([location.longitude, location.latitude]);
+
+      // Set popup content and attach to marker
+      popup.setDOMContent(popupContent);
+      marker.setPopup(popup);
+      
+      // Add to map
+      marker.addTo(map.current);
+
+      // Add click handler to verify popup content
+      marker.getElement().addEventListener('click', () => {
+        console.log('Marker clicked, popup content:', {
+          hasContent: !!popupContent.innerHTML,
+          contentLength: popupContent.innerHTML.length,
+          content: popupContent.innerHTML
+        });
       });
 
       markersRef.current.push(marker);
     });
-    console.log('Markers added:', markersRef.current.length);
+    console.log('All markers added:', markersRef.current.length);
 
     // Cleanup function
     return () => {
