@@ -5,17 +5,15 @@ import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { supabase } from '@/lib/supabase';
 import { Location, LocationCategory } from '@/types/database';
-import LocationPopup from './LocationPopup';
 import { createRoot } from 'react-dom/client';
 import { useSearchParams } from 'next/navigation';
 
 // Kansas City coordinates
-const KC_CENTER = [-94.5786, 39.0997];
+const KC_CENTER: [number, number] = [-94.5786, 39.0997];
 const INITIAL_ZOOM = 12;
 
 // Initialize Mapbox
 const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
-console.log('Mapbox token available:', !!mapboxToken);
 
 if (!mapboxToken) {
   console.error('Mapbox token is missing. Please add NEXT_PUBLIC_MAPBOX_TOKEN to your .env.local file');
@@ -36,6 +34,11 @@ const categoryColors: Record<string, string> = {
   theater: '#D4A5A5',
   other: '#9B9B9B'
 };
+
+interface CultureMapProps {
+  locations: Location[];
+  onLocationSelect: (location: Location) => void;
+}
 
 // Add custom marker creation function
 const createCustomMarker = (location: Location) => {
@@ -63,7 +66,6 @@ const createCustomMarker = (location: Location) => {
 };
 
 export default function CultureMap({ locations, onLocationSelect }: CultureMapProps) {
-  console.log('CultureMap component rendering');
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
@@ -75,7 +77,6 @@ export default function CultureMap({ locations, onLocationSelect }: CultureMapPr
 
   // Fetch locations from Supabase
   useEffect(() => {
-    console.log('Fetching locations...');
     async function fetchLocations() {
       try {
         let query = supabase
@@ -91,8 +92,7 @@ export default function CultureMap({ locations, onLocationSelect }: CultureMapPr
         const { data, error } = await query;
 
         if (error) throw error;
-        console.log('Locations fetched:', data?.length || 0);
-        locations(data || []);
+        onLocationSelect(data?.[0] || null);
       } catch (err) {
         console.error('Error fetching locations:', err);
         setError('Failed to load locations');
@@ -100,13 +100,12 @@ export default function CultureMap({ locations, onLocationSelect }: CultureMapPr
     }
 
     fetchLocations();
-  }, [category]);
+  }, [category, onLocationSelect]);
 
   // Initialize map
   useEffect(() => {
     if (!mapContainer.current || map.current) return;
 
-    console.log('Initializing map...');
     map.current = new mapboxgl.Map({
       container: mapContainer.current,
       style: 'mapbox://styles/mapbox/streets-v12',
@@ -115,7 +114,6 @@ export default function CultureMap({ locations, onLocationSelect }: CultureMapPr
     });
 
     map.current.on('load', () => {
-      console.log('Map loaded');
       setMapLoaded(true);
     });
 
@@ -144,31 +142,24 @@ export default function CultureMap({ locations, onLocationSelect }: CultureMapPr
 
   // Add markers when map is loaded and locations are available
   useEffect(() => {
-    if (!mapLoaded || !map.current || locations.length === 0) {
-      console.log('Skipping marker creation:', { mapLoaded, hasMap: !!map.current, locationCount: locations.length });
-      return;
-    }
+    if (!mapLoaded || !map.current || locations.length === 0) return;
 
-    console.log('Adding markers...');
     // Clean up existing markers and popups
     cleanupMarkers();
 
     // Add new markers
-    locations.forEach((location) => {
-      console.log('Creating marker for location:', location.title);
-      
+    locations.forEach((location: Location) => {
       // Create custom marker element
       const el = createCustomMarker(location);
-      console.log('Marker element created:', el);
 
       // Create popup content with actual location data
       const popupContent = document.createElement('div');
       popupContent.innerHTML = `
         <div style="padding: 16px; min-width: 300px; min-height: 200px; background: white;">
-          ${location.photo_url ? `
+          ${location.custom_icon_url ? `
             <div style="width: 100%; height: 200px; margin-bottom: 16px; border-radius: 8px; overflow: hidden;">
               <img 
-                src="${location.photo_url}" 
+                src="${location.custom_icon_url}" 
                 alt="${location.title}" 
                 style="width: 100%; height: 100%; object-fit: cover;"
               />
@@ -188,16 +179,6 @@ export default function CultureMap({ locations, onLocationSelect }: CultureMapPr
                 <strong style="color: #333;">Address:</strong> ${location.address}
               </div>
             ` : ''}
-            ${location.hours ? `
-              <div style="margin-bottom: 8px;">
-                <strong style="color: #333;">Hours:</strong> ${location.hours}
-              </div>
-            ` : ''}
-            ${location.phone ? `
-              <div style="margin-bottom: 8px;">
-                <strong style="color: #333;">Phone:</strong> ${location.phone}
-              </div>
-            ` : ''}
             ${location.website ? `
               <div style="margin-bottom: 8px;">
                 <strong style="color: #333;">Website:</strong> 
@@ -207,21 +188,14 @@ export default function CultureMap({ locations, onLocationSelect }: CultureMapPr
                 </a>
               </div>
             ` : ''}
-            ${location.additional_info ? `
-              <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #eee;">
-                <strong style="color: #333;">Additional Info:</strong>
-                <p style="margin-top: 4px; color: #666;">${location.additional_info}</p>
+            ${location.phone ? `
+              <div style="margin-bottom: 8px;">
+                <strong style="color: #333;">Phone:</strong> ${location.phone}
               </div>
             ` : ''}
           </div>
         </div>
       `;
-
-      console.log('Popup content created:', {
-        hasContent: !!popupContent.innerHTML,
-        contentLength: popupContent.innerHTML.length,
-        content: popupContent.innerHTML
-      });
 
       // Create popup with improved configuration
       const popup = new mapboxgl.Popup({
@@ -231,10 +205,7 @@ export default function CultureMap({ locations, onLocationSelect }: CultureMapPr
         maxWidth: '300px',
         anchor: 'bottom',
         className: 'custom-popup',
-        focusAfterOpen: false,
-        autoPan: true,
-        autoPanSpeed: 10,
-        autoPanPadding: { top: 50, bottom: 50, left: 50, right: 50 }
+        focusAfterOpen: false
       });
 
       // Create marker and explicitly attach popup
@@ -246,20 +217,12 @@ export default function CultureMap({ locations, onLocationSelect }: CultureMapPr
       marker.setPopup(popup);
       
       // Add to map
-      marker.addTo(map.current);
-
-      // Add click handler to verify popup content
-      marker.getElement().addEventListener('click', () => {
-        console.log('Marker clicked, popup content:', {
-          hasContent: !!popupContent.innerHTML,
-          contentLength: popupContent.innerHTML.length,
-          content: popupContent.innerHTML
-        });
-      });
+      if (map.current) {
+        marker.addTo(map.current);
+      }
 
       markers.current[location.id] = marker;
     });
-    console.log('All markers added:', Object.keys(markers.current).length);
 
     // Cleanup function
     return () => {
@@ -268,7 +231,6 @@ export default function CultureMap({ locations, onLocationSelect }: CultureMapPr
   }, [mapLoaded, locations]);
 
   if (error) {
-    console.log('Rendering error state:', error);
     return (
       <div className="relative w-full h-screen flex items-center justify-center bg-gray-100">
         <div className="text-red-600 font-semibold">{error}</div>
