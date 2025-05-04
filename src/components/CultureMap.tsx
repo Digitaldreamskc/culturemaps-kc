@@ -36,7 +36,6 @@ const categoryColors: Record<string, string> = {
 };
 
 interface CultureMapProps {
-  locations: Location[];
   onLocationSelect: (location: Location) => void;
 }
 
@@ -65,13 +64,13 @@ const createCustomMarker = (location: Location) => {
   return el;
 };
 
-export default function CultureMap({ locations, onLocationSelect }: CultureMapProps) {
-  const mapContainer = useRef<HTMLDivElement>(null);
-  const map = useRef<mapboxgl.Map | null>(null);
-  const [mapLoaded, setMapLoaded] = useState(false);
+export default function CultureMap({ onLocationSelect }: CultureMapProps) {
+  const mapRef = useRef<mapboxgl.Map | null>(null);
+  const markersRef = useRef<{ [key: string]: mapboxgl.Marker }>({});
+  const popupsRef = useRef<{ [key: string]: mapboxgl.Popup }>({});
+  const [locations, setLocations] = useState<Location[]>([]);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const markers = useRef<{ [key: string]: mapboxgl.Marker }>({});
-  const popups = useRef<{ [key: string]: mapboxgl.Popup }>({});
   const searchParams = useSearchParams();
   const category = searchParams.get('category') as LocationCategory | null;
 
@@ -93,9 +92,12 @@ export default function CultureMap({ locations, onLocationSelect }: CultureMapPr
 
         if (error) throw error;
         onLocationSelect(data?.[0] || null);
+        setLocations(data || []);
       } catch (err) {
         console.error('Error fetching locations:', err);
         setError('Failed to load locations');
+      } finally {
+        setLoading(false);
       }
     }
 
@@ -104,23 +106,23 @@ export default function CultureMap({ locations, onLocationSelect }: CultureMapPr
 
   // Initialize map
   useEffect(() => {
-    if (!mapContainer.current || map.current) return;
+    if (!mapRef.current) return;
 
-    map.current = new mapboxgl.Map({
-      container: mapContainer.current,
+    mapRef.current = new mapboxgl.Map({
+      container: 'map',
       style: 'mapbox://styles/mapbox/streets-v12',
       center: KC_CENTER,
       zoom: INITIAL_ZOOM
     });
 
-    map.current.on('load', () => {
-      setMapLoaded(true);
+    mapRef.current.on('load', () => {
+      console.log('Map loaded');
     });
 
     return () => {
-      if (map.current) {
-        map.current.remove();
-        map.current = null;
+      if (mapRef.current) {
+        mapRef.current.remove();
+        mapRef.current = null;
       }
     };
   }, []);
@@ -128,21 +130,21 @@ export default function CultureMap({ locations, onLocationSelect }: CultureMapPr
   // Cleanup function for markers and popups
   const cleanupMarkers = () => {
     // First, remove all markers
-    Object.values(markers.current).forEach(marker => {
+    Object.values(markersRef.current).forEach(marker => {
       marker.remove();
     });
-    markers.current = {};
+    markersRef.current = {};
 
     // Then, cleanup all popups
-    Object.values(popups.current).forEach(popup => {
+    Object.values(popupsRef.current).forEach(popup => {
       popup.remove();
     });
-    popups.current = {};
+    popupsRef.current = {};
   };
 
   // Add markers when map is loaded and locations are available
   useEffect(() => {
-    if (!mapLoaded || !map.current || locations.length === 0) return;
+    if (!mapRef.current || locations.length === 0) return;
 
     // Clean up existing markers and popups
     cleanupMarkers();
@@ -217,18 +219,18 @@ export default function CultureMap({ locations, onLocationSelect }: CultureMapPr
       marker.setPopup(popup);
       
       // Add to map
-      if (map.current) {
-        marker.addTo(map.current);
+      if (mapRef.current) {
+        marker.addTo(mapRef.current);
       }
 
-      markers.current[location.id] = marker;
+      markersRef.current[location.id] = marker;
     });
 
     // Cleanup function
     return () => {
       cleanupMarkers();
     };
-  }, [mapLoaded, locations]);
+  }, [locations]);
 
   if (error) {
     return (
@@ -241,11 +243,11 @@ export default function CultureMap({ locations, onLocationSelect }: CultureMapPr
   return (
     <div className="relative w-full h-screen">
       <div 
-        ref={mapContainer} 
+        ref={mapRef} 
         className="absolute inset-0 w-full h-full"
         style={{ minHeight: '100vh' }}
       />
-      {!mapLoaded && (
+      {!loading && (
         <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
           <div className="text-lg font-semibold">Loading map...</div>
         </div>

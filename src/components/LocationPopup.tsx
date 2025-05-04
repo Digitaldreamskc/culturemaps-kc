@@ -3,36 +3,30 @@
 import { useEffect, useRef } from 'react';
 import { createRoot } from 'react-dom/client';
 import LocationInfo from './LocationInfo';
-import { Location } from '@/types/database';
+import { Location } from '@/types/location';
 
 interface LocationPopupProps {
   location: Location;
-  container: HTMLElement;
 }
 
-export default function LocationPopup({ location, container }: LocationPopupProps) {
-  const rootRef = useRef<ReturnType<typeof createRoot> | null>(null);
-
-  useEffect(() => {
-    if (!container) return;
-
-    // Create a new root for this popup
-    rootRef.current = createRoot(container);
-
-    // Render the content
-    rootRef.current.render(
-      <div className="min-w-[300px] min-h-[200px]">
-        <LocationInfo location={location} />
-      </div>
-    );
-
-    // Cleanup
-    return () => {
-      if (rootRef.current) {
-        rootRef.current.unmount();
-      }
-    };
-  }, [container, location]);
-
-  return null;
+export default function LocationPopup({ location }: LocationPopupProps) {
+  return (
+    <div className="p-4 max-w-sm">
+      <h3 className="text-lg font-semibold mb-2">{location.name}</h3>
+      <p className="text-gray-600 mb-2">{location.description}</p>
+      {location.address && (
+        <p className="text-sm text-gray-500 mb-2">{location.address}</p>
+      )}
+      {location.website && (
+        <a
+          href={location.website}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-blue-600 hover:text-blue-800 text-sm"
+        >
+          Visit Website
+        </a>
+      )}
+    </div>
+  );
 } 
