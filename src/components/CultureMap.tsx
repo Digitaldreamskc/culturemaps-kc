@@ -62,16 +62,14 @@ const createCustomMarker = (location: Location) => {
   return el;
 };
 
-export default function CultureMap() {
+export default function CultureMap({ locations, onLocationSelect }: CultureMapProps) {
   console.log('CultureMap component rendering');
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const markersRef = useRef<mapboxgl.Marker[]>([]);
-  const popupRootsRef = useRef<Map<string, ReturnType<typeof createRoot>>>(new Map());
-  const [locations, setLocations] = useState<Location[]>([]);
-  const [selectedLocation, setSelectedLocation] = useState<Location | null>(null);
+  const markers = useRef<{ [key: string]: mapboxgl.Marker }>({});
+  const popups = useRef<{ [key: string]: mapboxgl.Popup }>({});
   const searchParams = useSearchParams();
   const category = searchParams.get('category') as LocationCategory | null;
 
@@ -94,7 +92,7 @@ export default function CultureMap() {
 
         if (error) throw error;
         console.log('Locations fetched:', data?.length || 0);
-        setLocations(data || []);
+        locations(data || []);
       } catch (err) {
         console.error('Error fetching locations:', err);
         setError('Failed to load locations');
@@ -132,22 +130,16 @@ export default function CultureMap() {
   // Cleanup function for markers and popups
   const cleanupMarkers = () => {
     // First, remove all markers
-    markersRef.current.forEach(marker => {
+    Object.values(markers.current).forEach(marker => {
       marker.remove();
     });
-    markersRef.current = [];
+    markers.current = {};
 
-    // Then, cleanup all popup roots in the next tick
-    setTimeout(() => {
-      popupRootsRef.current.forEach((root, id) => {
-        try {
-          root.unmount();
-        } catch (err) {
-          console.warn(`Error unmounting popup root for ${id}:`, err);
-        }
-      });
-      popupRootsRef.current.clear();
-    }, 0);
+    // Then, cleanup all popups
+    Object.values(popups.current).forEach(popup => {
+      popup.remove();
+    });
+    popups.current = {};
   };
 
   // Add markers when map is loaded and locations are available
@@ -265,9 +257,9 @@ export default function CultureMap() {
         });
       });
 
-      markersRef.current.push(marker);
+      markers.current[location.id] = marker;
     });
-    console.log('All markers added:', markersRef.current.length);
+    console.log('All markers added:', Object.keys(markers.current).length);
 
     // Cleanup function
     return () => {

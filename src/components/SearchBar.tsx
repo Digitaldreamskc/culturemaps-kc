@@ -9,8 +9,6 @@ interface SearchBarProps {
 
 export default function SearchBar({ onSearch }: SearchBarProps) {
   const [query, setQuery] = useState('');
-  const [isFocused, setIsFocused] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -19,56 +17,23 @@ export default function SearchBar({ onSearch }: SearchBarProps) {
     }
   };
 
-  // Focus input when clicking the search icon
-  const handleSearchClick = () => {
-    inputRef.current?.focus();
-  };
-
   return (
-    <form 
-      onSubmit={handleSubmit}
-      className="relative w-full"
-    >
-      <div className={`
-        relative flex items-center w-full
-        bg-white rounded-lg
-        border border-gray-200
-        shadow-sm
-        transition-all duration-200
-        ${isFocused ? 'ring-2 ring-blue-500 ring-opacity-50 border-blue-500' : 'hover:border-gray-300'}
-      `}>
+    <form onSubmit={handleSubmit} className="w-full max-w-2xl">
+      <div className="relative">
         <input
-          ref={inputRef}
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          onFocus={() => setIsFocused(true)}
-          onBlur={() => setIsFocused(false)}
-          placeholder="Search locations..."
-          className="
-            w-full h-10
-            pl-4 pr-10
-            text-sm text-gray-900
-            placeholder-gray-500
-            bg-transparent
-            border-0
-            focus:outline-none
-            focus:ring-0
-          "
+          placeholder="Search cultural sites..."
+          className="w-full px-4 py-2 pl-4 pr-12 text-gray-900 bg-white border border-gray-200 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
         />
         <button
           type="submit"
-          onClick={handleSearchClick}
-          className="
-            absolute right-0
-            h-10 w-10
-            flex items-center justify-center
-            text-gray-500
-            hover:text-gray-700
-            transition-colors duration-200
-          "
+          className="absolute right-2 top-1/2 -translate-y-1/2 p-2 text-gray-400 hover:text-gray-600 transition-colors"
         >
-          <Search className="w-5 h-5" />
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
         </button>
       </div>
     </form>
