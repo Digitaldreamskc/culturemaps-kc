@@ -14,6 +14,8 @@ const INITIAL_ZOOM = 12;
 // Initialize Mapbox
 const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
 
+console.log('Mapbox Token:', mapboxToken ? 'Token exists' : 'Token missing');
+
 if (!mapboxToken) {
   console.error('Mapbox token is missing. Please add NEXT_PUBLIC_MAPBOX_TOKEN to your .env.local file');
 }
@@ -78,6 +80,7 @@ export default function CultureMap({ onLocationSelect }: CultureMapProps) {
   useEffect(() => {
     async function fetchLocations() {
       try {
+        console.log('Fetching locations...');
         setLoading(true);
         let query = supabase
           .from('locations')
@@ -92,6 +95,7 @@ export default function CultureMap({ onLocationSelect }: CultureMapProps) {
         const { data, error } = await query;
 
         if (error) throw error;
+        console.log('Locations fetched:', data?.length || 0);
         setLocations(data || []);
       } catch (err) {
         console.error('Error fetching locations:', err);
@@ -108,16 +112,27 @@ export default function CultureMap({ onLocationSelect }: CultureMapProps) {
   useEffect(() => {
     if (!mapContainerRef.current || mapRef.current) return;
 
-    mapRef.current = new mapboxgl.Map({
-      container: mapContainerRef.current,
-      style: 'mapbox://styles/mapbox/streets-v12',
-      center: KC_CENTER,
-      zoom: INITIAL_ZOOM
-    });
+    console.log('Initializing map...');
+    try {
+      mapRef.current = new mapboxgl.Map({
+        container: mapContainerRef.current,
+        style: 'mapbox://styles/mapbox/streets-v12',
+        center: KC_CENTER,
+        zoom: INITIAL_ZOOM
+      });
 
-    mapRef.current.on('load', () => {
-      console.log('Map loaded');
-    });
+      mapRef.current.on('load', () => {
+        console.log('Map loaded successfully');
+      });
+
+      mapRef.current.on('error', (e) => {
+        console.error('Map error:', e);
+        setError('Failed to load map');
+      });
+    } catch (err) {
+      console.error('Error initializing map:', err);
+      setError('Failed to initialize map');
+    }
 
     return () => {
       if (mapRef.current) {
@@ -146,6 +161,7 @@ export default function CultureMap({ onLocationSelect }: CultureMapProps) {
   useEffect(() => {
     if (!mapRef.current || loading || !locations || locations.length === 0) return;
 
+    console.log('Adding markers...');
     // Clean up existing markers and popups
     cleanupMarkers();
 
@@ -209,6 +225,7 @@ export default function CultureMap({ onLocationSelect }: CultureMapProps) {
         }
       });
     });
+    console.log('Markers added successfully');
   }, [locations, loading, onLocationSelect]);
 
   if (error) {
