@@ -73,6 +73,7 @@ export default function CultureMap({ onLocationSelect }: CultureMapProps) {
   const [locations, setLocations] = useState<Location[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [mapLoaded, setMapLoaded] = useState(false);
   const searchParams = useSearchParams();
   const category = searchParams.get('category') as LocationCategory | null;
 
@@ -123,6 +124,7 @@ export default function CultureMap({ onLocationSelect }: CultureMapProps) {
 
       mapRef.current.on('load', () => {
         console.log('Map loaded successfully');
+        setMapLoaded(true);
       });
 
       mapRef.current.on('error', (e) => {
@@ -159,7 +161,15 @@ export default function CultureMap({ onLocationSelect }: CultureMapProps) {
 
   // Add markers when map is loaded and locations are available
   useEffect(() => {
-    if (!mapRef.current || loading || !locations || locations.length === 0) return;
+    if (!mapRef.current || !mapLoaded || loading || !Array.isArray(locations) || locations.length === 0) {
+      console.log('Skipping marker creation:', {
+        mapExists: !!mapRef.current,
+        mapLoaded,
+        loading,
+        locationsLength: locations?.length
+      });
+      return;
+    }
 
     console.log('Adding markers...');
     // Clean up existing markers and popups
@@ -167,66 +177,73 @@ export default function CultureMap({ onLocationSelect }: CultureMapProps) {
 
     // Add new markers
     locations.forEach((location: Location) => {
-      if (!location.latitude || !location.longitude) return;
+      if (!location.latitude || !location.longitude) {
+        console.log('Skipping location due to missing coordinates:', location.title);
+        return;
+      }
 
-      const marker = new mapboxgl.Marker()
-        .setLngLat([location.longitude, location.latitude])
-        .addTo(mapRef.current!);
+      try {
+        const marker = new mapboxgl.Marker()
+          .setLngLat([location.longitude, location.latitude])
+          .addTo(mapRef.current!);
 
-      const popup = new mapboxgl.Popup({
-        offset: 25,
-        closeButton: true,
-        closeOnClick: false,
-        maxWidth: '300px',
-        anchor: 'bottom',
-        className: 'custom-popup',
-        focusAfterOpen: false
-      }).setHTML(`
-        <div style="padding: 16px; min-width: 300px; min-height: 200px; background: white;">
-          <h3 style="font-size: 18px; font-weight: 600; margin-bottom: 8px; color: #1a1a1a;">
-            ${location.title}
-          </h3>
-          ${location.description ? `
-            <p style="font-size: 14px; color: #666; margin-bottom: 12px; line-height: 1.5;">
-              ${location.description}
-            </p>
-          ` : ''}
-          <div style="font-size: 14px; color: #666;">
-            ${location.address ? `
-              <div style="margin-bottom: 8px;">
-                <strong style="color: #333;">Address:</strong> ${location.address}
-              </div>
+        const popup = new mapboxgl.Popup({
+          offset: 25,
+          closeButton: true,
+          closeOnClick: false,
+          maxWidth: '300px',
+          anchor: 'bottom',
+          className: 'custom-popup',
+          focusAfterOpen: false
+        }).setHTML(`
+          <div style="padding: 16px; min-width: 300px; min-height: 200px; background: white;">
+            <h3 style="font-size: 18px; font-weight: 600; margin-bottom: 8px; color: #1a1a1a;">
+              ${location.title}
+            </h3>
+            ${location.description ? `
+              <p style="font-size: 14px; color: #666; margin-bottom: 12px; line-height: 1.5;">
+                ${location.description}
+              </p>
             ` : ''}
-            ${location.website ? `
-              <div style="margin-bottom: 8px;">
-                <strong style="color: #333;">Website:</strong> 
-                <a href="${location.website}" target="_blank" rel="noopener noreferrer" 
-                   style="color: #2563eb; text-decoration: none; hover: underline;">
-                  Visit Website
-                </a>
-              </div>
-            ` : ''}
-            ${location.phone ? `
-              <div style="margin-bottom: 8px;">
-                <strong style="color: #333;">Phone:</strong> ${location.phone}
-              </div>
-            ` : ''}
+            <div style="font-size: 14px; color: #666;">
+              ${location.address ? `
+                <div style="margin-bottom: 8px;">
+                  <strong style="color: #333;">Address:</strong> ${location.address}
+                </div>
+              ` : ''}
+              ${location.website ? `
+                <div style="margin-bottom: 8px;">
+                  <strong style="color: #333;">Website:</strong> 
+                  <a href="${location.website}" target="_blank" rel="noopener noreferrer" 
+                     style="color: #2563eb; text-decoration: none; hover: underline;">
+                    Visit Website
+                  </a>
+                </div>
+              ` : ''}
+              ${location.phone ? `
+                <div style="margin-bottom: 8px;">
+                  <strong style="color: #333;">Phone:</strong> ${location.phone}
+                </div>
+              ` : ''}
+            </div>
           </div>
-        </div>
-      `);
+        `);
 
-      marker.setPopup(popup);
-      markersRef.current[location.id] = marker;
-      popupsRef.current[location.id] = popup;
+        marker.setPopup(popup);
+        markersRef.current[location.id] = marker;
+        popupsRef.current[location.id] = popup;
 
-      marker.getElement().addEventListener('click', () => {
-        if (onLocationSelect) {
-          onLocationSelect(location);
-        }
-      });
+        marker.getElement().addEventListener('click', () => {
+          if (onLocationSelect) {
+            onLocationSelect(location);
+          }
+        });
+      } catch (err) {
+        console.error('Error adding marker for location:', location.title, err);
+      }
     });
     console.log('Markers added successfully');
-  }, [locations, loading, onLocationSelect]);
+  }, [locations, loading, mapLoaded, onLocationSelect]);
 
   if (error) {
     return (
@@ -239,12 +256,14 @@ export default function CultureMap({ onLocationSelect }: CultureMapProps) {
     );
   }
 
-  if (loading) {
+  if (loading || !mapLoaded) {
     return (
       <div className="w-full h-screen flex items-center justify-center bg-gray-100">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading locations...</p>
+          <p className="mt-4 text-gray-600">
+            {loading ? 'Loading locations...' : 'Loading map...'}
+          </p>
         </div>
       </div>
     );
