@@ -10,6 +10,12 @@ const nextConfig = {
   images: {
     domains: ['localhost'],
   },
+  // Disable static page generation for dynamic routes
+  output: 'standalone',
+  experimental: {
+    // This will ensure the app is built as a standalone application
+    outputFileTracingRoot: undefined,
+  },
 };
 
 module.exports = nextConfig; 

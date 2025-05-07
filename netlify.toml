@@ -11,4 +11,9 @@
   NEXT_PUBLIC_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB4cHh4cHh4cHh4cHh4cHh4cHh4cHgiLCJyb2xlIjoiYW5vbiIsImlhdCI6MTYxNjE1NjEwMCwiZXhwIjoxOTMxNzMyMTAwfQ"
 
 [[plugins]]
-  package = "@netlify/plugin-nextjs" 
+  package = "@netlify/plugin-nextjs"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200 
