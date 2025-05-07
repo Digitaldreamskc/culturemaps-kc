@@ -1,9 +1,9 @@
 [build]
   command = "npm run build"
   publish = ".next"
-  environment = { NODE_VERSION = "22.0.0" }
 
 [build.environment]
+  NODE_VERSION = "22.0.0"
   NEXT_TELEMETRY_DISABLED = "1"
   NPM_FLAGS = "--legacy-peer-deps"
   NEXT_PUBLIC_MAPBOX_TOKEN = "pk.eyJ1IjoiZGlnaXRhbGRyZWFtc2tjIiwiYSI6ImNsdWJqY2F1ZzBmM2Uya3F1dGJqY2F1ZzBmM2UyIn0"
