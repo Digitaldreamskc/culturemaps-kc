@@ -10,11 +10,19 @@ const nextConfig = {
   images: {
     domains: ['localhost'],
   },
-  // Disable static page generation for dynamic routes
+  // Configure for client-side rendering
   output: 'standalone',
   experimental: {
     // This will ensure the app is built as a standalone application
     outputFileTracingRoot: undefined,
+  },
+  // Add trailing slashes to prevent 404s
+  trailingSlash: true,
+  // Configure page extensions
+  pageExtensions: ['tsx', 'ts', 'jsx', 'js'],
+  // Enable both app and pages directories
+  experimental: {
+    appDir: true,
   },
 };
 
