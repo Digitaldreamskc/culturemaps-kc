@@ -8,6 +8,7 @@ const inter = Inter({
   display: 'swap',
   preload: true,
   fallback: ['system-ui', 'arial'],
+  variable: '--font-inter',
 });
 
 export const viewport: Viewport = {
@@ -31,18 +32,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={inter.className}>
+    <html lang="en" className={`${inter.variable} ${inter.className}`}>
       <head>
         <link
           href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css"
           rel="stylesheet"
-          crossOrigin="anonymous"
-        />
-        <link
-          rel="preload"
-          href="/_next/static/media/inter-var.woff2"
-          as="font"
-          type="font/woff2"
           crossOrigin="anonymous"
         />
       </head>
