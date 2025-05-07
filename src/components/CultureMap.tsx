@@ -24,6 +24,47 @@ if (mapboxToken) {
   mapboxgl.accessToken = mapboxToken;
 }
 
+// Configure Mapbox options
+const mapboxOptions: Partial<mapboxgl.MapOptions> = {
+  style: 'mapbox://styles/mapbox/streets-v12',
+  center: KC_CENTER,
+  zoom: INITIAL_ZOOM,
+  attributionControl: true,
+  preserveDrawingBuffer: true,
+  trackUserLocation: true,
+  cooperativeGestures: true,
+  failIfMajorPerformanceCaveat: false,
+  fadeOnZoom: true,
+  renderWorldCopies: true,
+  antialias: true,
+  maxZoom: 18,
+  minZoom: 2,
+  pitchWithRotate: true,
+  dragRotate: true,
+  dragPan: true,
+  keyboard: true,
+  doubleClickZoom: true,
+  touchZoomRotate: true,
+  trackResize: true,
+  transformRequest: (url, resourceType) => {
+    if (resourceType === 'Style' || resourceType === 'Source') {
+      return {
+        url,
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache',
+        },
+        credentials: 'same-origin',
+      } as mapboxgl.RequestParameters;
+    }
+    return {
+      url,
+      headers: {},
+      credentials: 'same-origin',
+    } as mapboxgl.RequestParameters;
+  },
+};
+
 // Custom marker colors based on category
 const categoryColors: Record<string, string> = {
   mural: '#FF6B6B',
@@ -116,9 +157,7 @@ export default function CultureMap({ onLocationSelect }: CultureMapProps) {
     try {
       mapRef.current = new mapboxgl.Map({
         container: mapContainerRef.current,
-        style: 'mapbox://styles/mapbox/streets-v12',
-        center: KC_CENTER,
-        zoom: INITIAL_ZOOM
+        ...mapboxOptions
       });
 
       mapRef.current.on('load', () => {
