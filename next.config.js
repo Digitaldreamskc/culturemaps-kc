@@ -17,6 +17,7 @@ const nextConfig = {
     // This will ensure the app is built as a standalone application
     outputFileTracingRoot: undefined,
     optimizeCss: true,
+    optimizeFonts: true,
   },
   // Add trailing slashes to prevent 404s
   trailingSlash: true,
@@ -61,6 +62,10 @@ const nextConfig = {
             key: 'Content-Type',
             value: 'font/woff2',
           },
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
         ],
       },
     ];
@@ -71,6 +76,8 @@ const nextConfig = {
       exclude: ['/404', '/500', '/_error'],
     };
   },
+  // Optimize font loading
+  optimizeFonts: true,
 };
 
 module.exports = nextConfig; 

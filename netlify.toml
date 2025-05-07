@@ -1,10 +1,10 @@
 [build]
-  command = "npm install && npm run build"
+  command = "npm run build"
   publish = ".next"
+  environment = { NODE_VERSION = "22.0.0" }
 
 [build.environment]
   NEXT_TELEMETRY_DISABLED = "1"
-  NODE_VERSION = "18.17.0"
   NPM_FLAGS = "--legacy-peer-deps"
   NEXT_PUBLIC_MAPBOX_TOKEN = "pk.eyJ1IjoiZGlnaXRhbGRyZWFtc2tjIiwiYSI6ImNsdWJqY2F1ZzBmM2Uya3F1dGJqY2F1ZzBmM2UyIn0"
   NEXT_PUBLIC_SUPABASE_URL = "https://culturemap-kc.supabase.co"
@@ -13,33 +13,29 @@
 [[plugins]]
   package = "@netlify/plugin-nextjs"
 
-# Handle Next.js static files
-[[headers]]
-  for = "/_next/static/*"
-  [headers.values]
-    Cache-Control = "public, max-age=31536000, immutable"
-    Content-Type = "application/javascript"
+[functions]
+  directory = "netlify/functions"
 
-[[headers]]
-  for = "/_next/static/css/*"
-  [headers.values]
-    Cache-Control = "public, max-age=31536000, immutable"
-    Content-Type = "text/css"
+[[redirects]]
+  from = "/_next/static/*"
+  to = "/_next/static/:splat"
+  status = 200
 
-[[headers]]
-  for = "/_next/static/media/*"
-  [headers.values]
-    Cache-Control = "public, max-age=31536000, immutable"
-    Content-Type = "font/woff2"
+[[redirects]]
+  from = "/_next/data/*"
+  to = "/_next/data/:splat"
+  status = 200
 
-# Handle client-side routing
+[[redirects]]
+  from = "/_next/image*"
+  to = "/_next/image:splat"
+  status = 200
+
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
-  force = true
 
-# Handle static assets
 [[headers]]
   for = "/*"
   [headers.values]
@@ -47,21 +43,20 @@
     X-XSS-Protection = "1; mode=block"
     X-Content-Type-Options = "nosniff"
     Referrer-Policy = "strict-origin-when-cross-origin"
-
-# Add security headers for Mapbox
-[[headers]]
-  for = "/*"
-  [headers.values]
     Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://api.mapbox.com; style-src 'self' 'unsafe-inline' https://api.mapbox.com; img-src 'self' data: https://*.mapbox.com; connect-src 'self' https://*.mapbox.com https://*.supabase.co;"
 
-# Cache control for static assets
 [[headers]]
   for = "/_next/static/*"
   [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"
 
-# Cache control for stylesheets
 [[headers]]
-  for = "/*.css"
+  for = "/_next/static/css/*"
+  [headers.values]
+    Content-Type = "text/css"
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/_next/static/media/*"
   [headers.values]
     Cache-Control = "public, max-age=31536000, immutable" 
