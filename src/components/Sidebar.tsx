@@ -45,7 +45,7 @@ export default function Sidebar({ isOpen, onClose, locations, onLocationSelect }
         </button>
         <h2 className="text-xl font-bold mb-4">Locations</h2>
         <div className="space-y-4">
-          {locations.map((location) => (
+          {Array.isArray(locations) && locations.map((location) => (
             <div
               key={location.id}
               className="p-4 border rounded-lg hover:bg-gray-50 cursor-pointer"

@@ -117,7 +117,7 @@ export default function AdminPage() {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {submissions.map((submission) => (
+                {Array.isArray(submissions) && submissions.map((submission) => (
                   <tr key={submission.id}>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">{submission.name}</div>

@@ -169,7 +169,7 @@ export default function SubmitLocationForm() {
               errors.category ? 'border-red-500' : 'border-gray-300'
             }`}
           >
-            {categories.map(category => (
+            {Array.isArray(categories) && categories.map(category => (
               <option key={category.value} value={category.value}>
                 {category.label}
               </option>
