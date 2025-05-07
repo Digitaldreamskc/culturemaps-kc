@@ -78,6 +78,7 @@ export default function CultureMap({ onLocationSelect }: CultureMapProps) {
   useEffect(() => {
     async function fetchLocations() {
       try {
+        setLoading(true);
         let query = supabase
           .from('locations')
           .select('*')
@@ -143,7 +144,7 @@ export default function CultureMap({ onLocationSelect }: CultureMapProps) {
 
   // Add markers when map is loaded and locations are available
   useEffect(() => {
-    if (!mapRef.current || !locations || locations.length === 0) return;
+    if (!mapRef.current || loading || !locations || locations.length === 0) return;
 
     // Clean up existing markers and popups
     cleanupMarkers();
@@ -208,20 +209,26 @@ export default function CultureMap({ onLocationSelect }: CultureMapProps) {
         }
       });
     });
-  }, [locations, onLocationSelect]);
-
-  if (loading) {
-    return (
-      <div className="w-full h-screen flex items-center justify-center bg-gray-100">
-        <div className="text-lg font-semibold">Loading map...</div>
-      </div>
-    );
-  }
+  }, [locations, loading, onLocationSelect]);
 
   if (error) {
     return (
       <div className="w-full h-screen flex items-center justify-center bg-gray-100">
-        <div className="text-lg font-semibold text-red-600">{error}</div>
+        <div className="text-center">
+          <div className="text-red-600 text-lg font-semibold mb-2">Error</div>
+          <p className="text-gray-600">{error}</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="w-full h-screen flex items-center justify-center bg-gray-100">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading locations...</p>
+        </div>
       </div>
     );
   }
