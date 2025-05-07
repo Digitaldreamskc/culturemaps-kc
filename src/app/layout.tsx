@@ -7,7 +7,7 @@ const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "CultureMap KC",
-  description: "Discover Kansas City's cultural landmarks and events",
+  description: "Explore Kansas City's cultural landmarks and venues",
 };
 
 export default function RootLayout({
@@ -17,6 +17,12 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
+      <head>
+        <link
+          href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css"
+          rel="stylesheet"
+        />
+      </head>
       <body className={inter.className}>
         <header className="bg-white shadow-md">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
