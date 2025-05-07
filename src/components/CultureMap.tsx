@@ -31,10 +31,8 @@ const mapboxOptions: Partial<mapboxgl.MapOptions> = {
   zoom: INITIAL_ZOOM,
   attributionControl: true,
   preserveDrawingBuffer: true,
-  trackUserLocation: true,
   cooperativeGestures: true,
   failIfMajorPerformanceCaveat: false,
-  fadeOnZoom: true,
   renderWorldCopies: true,
   antialias: true,
   maxZoom: 18,
@@ -151,51 +149,38 @@ export default function CultureMap({ onLocationSelect }: CultureMapProps) {
 
   // Initialize map
   useEffect(() => {
-    if (!mapContainerRef.current || mapRef.current) return;
+    if (!mapContainerRef.current || mapRef.current || !mapboxToken) return;
 
     console.log('Initializing map...');
     try {
-      mapRef.current = new mapboxgl.Map({
+      const map = new mapboxgl.Map({
         container: mapContainerRef.current,
         ...mapboxOptions
       });
 
-      mapRef.current.on('load', () => {
+      map.on('load', () => {
         console.log('Map loaded successfully');
         setMapLoaded(true);
       });
 
-      mapRef.current.on('error', (e) => {
+      map.on('error', (e) => {
         console.error('Map error:', e);
         setError('Failed to load map');
       });
+
+      mapRef.current = map;
+
+      return () => {
+        if (mapRef.current) {
+          mapRef.current.remove();
+          mapRef.current = null;
+        }
+      };
     } catch (err) {
       console.error('Error initializing map:', err);
       setError('Failed to initialize map');
     }
-
-    return () => {
-      if (mapRef.current) {
-        mapRef.current.remove();
-        mapRef.current = null;
-      }
-    };
-  }, []);
-
-  // Cleanup function for markers and popups
-  const cleanupMarkers = () => {
-    // First, remove all markers
-    Object.values(markersRef.current).forEach(marker => {
-      marker.remove();
-    });
-    markersRef.current = {};
-
-    // Then, cleanup all popups
-    Object.values(popupsRef.current).forEach(popup => {
-      popup.remove();
-    });
-    popupsRef.current = {};
-  };
+  }, [mapboxToken]);
 
   // Add markers when map is loaded and locations are available
   useEffect(() => {
@@ -211,7 +196,10 @@ export default function CultureMap({ onLocationSelect }: CultureMapProps) {
 
     console.log('Adding markers...');
     // Clean up existing markers and popups
-    cleanupMarkers();
+    Object.values(markersRef.current).forEach(marker => marker.remove());
+    markersRef.current = {};
+    Object.values(popupsRef.current).forEach(popup => popup.remove());
+    popupsRef.current = {};
 
     // Add new markers
     locations.forEach((location: Location) => {
