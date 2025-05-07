@@ -20,10 +20,6 @@ const nextConfig = {
   trailingSlash: true,
   // Configure page extensions
   pageExtensions: ['tsx', 'ts', 'jsx', 'js'],
-  // Enable both app and pages directories
-  experimental: {
-    appDir: true,
-  },
 };
 
 module.exports = nextConfig; 
