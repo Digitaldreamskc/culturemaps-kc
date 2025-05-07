@@ -35,7 +35,7 @@ const categoryColors: Record<string, string> = {
 };
 
 interface CultureMapProps {
-  onLocationSelect: (location: Location) => void;
+  onLocationSelect?: (location: Location) => void;
 }
 
 // Add custom marker creation function
@@ -143,7 +143,7 @@ export default function CultureMap({ onLocationSelect }: CultureMapProps) {
 
   // Add markers when map is loaded and locations are available
   useEffect(() => {
-    if (!mapRef.current || locations.length === 0) return;
+    if (!mapRef.current || !locations || locations.length === 0) return;
 
     // Clean up existing markers and popups
     cleanupMarkers();
@@ -203,35 +203,30 @@ export default function CultureMap({ onLocationSelect }: CultureMapProps) {
       popupsRef.current[location.id] = popup;
 
       marker.getElement().addEventListener('click', () => {
-        onLocationSelect(location);
+        if (onLocationSelect) {
+          onLocationSelect(location);
+        }
       });
     });
-
-    return () => {
-      cleanupMarkers();
-    };
   }, [locations, onLocationSelect]);
+
+  if (loading) {
+    return (
+      <div className="w-full h-screen flex items-center justify-center bg-gray-100">
+        <div className="text-lg font-semibold">Loading map...</div>
+      </div>
+    );
+  }
 
   if (error) {
     return (
-      <div className="relative w-full h-screen flex items-center justify-center bg-gray-100">
-        <div className="text-red-600 font-semibold">{error}</div>
+      <div className="w-full h-screen flex items-center justify-center bg-gray-100">
+        <div className="text-lg font-semibold text-red-600">{error}</div>
       </div>
     );
   }
 
   return (
-    <div className="relative w-full h-screen">
-      <div 
-        ref={mapContainerRef} 
-        className="absolute inset-0 w-full h-full"
-        style={{ minHeight: '100vh' }}
-      />
-      {loading && (
-        <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
-          <div className="text-lg font-semibold">Loading map...</div>
-        </div>
-      )}
-    </div>
+    <div ref={mapContainerRef} className="w-full h-screen" />
   );
 } 

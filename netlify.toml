@@ -6,7 +6,9 @@
   NEXT_TELEMETRY_DISABLED = "1"
   NODE_VERSION = "18.17.0"
   NPM_FLAGS = "--legacy-peer-deps"
-  NPM_TOKEN = "dummy-token"
+  NEXT_PUBLIC_MAPBOX_TOKEN = "pk.eyJ1IjoiZGlnaXRhbGRyZWFtc2tjIiwiYSI6ImNsdWJqY2F1ZzBmM2Uya3F1dGJqY2F1ZzBmM2UyIn0"
+  NEXT_PUBLIC_SUPABASE_URL = "https://culturemap-kc.supabase.co"
+  NEXT_PUBLIC_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB4cHh4cHh4cHh4cHh4cHh4cHh4cHgiLCJyb2xlIjoiYW5vbiIsImlhdCI6MTYxNjE1NjEwMCwiZXhwIjoxOTMxNzMyMTAwfQ"
 
 [[plugins]]
   package = "@netlify/plugin-nextjs" 
