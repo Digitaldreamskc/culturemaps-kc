@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { Location } from '@/types/location';
 
 interface SearchBarProps {
   onSearch: (query: string) => void;

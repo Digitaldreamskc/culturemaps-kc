@@ -5,7 +5,6 @@ import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { supabase } from '@/lib/supabase';
 import { Location, LocationCategory } from '@/types/database';
-import { createRoot } from 'react-dom/client';
 import { useSearchParams } from 'next/navigation';
 
 // Kansas City coordinates
@@ -65,6 +64,7 @@ const createCustomMarker = (location: Location) => {
 };
 
 export default function CultureMap({ onLocationSelect }: CultureMapProps) {
+  const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<{ [key: string]: mapboxgl.Marker }>({});
   const popupsRef = useRef<{ [key: string]: mapboxgl.Popup }>({});
@@ -91,7 +91,6 @@ export default function CultureMap({ onLocationSelect }: CultureMapProps) {
         const { data, error } = await query;
 
         if (error) throw error;
-        onLocationSelect(data?.[0] || null);
         setLocations(data || []);
       } catch (err) {
         console.error('Error fetching locations:', err);
@@ -102,14 +101,14 @@ export default function CultureMap({ onLocationSelect }: CultureMapProps) {
     }
 
     fetchLocations();
-  }, [category, onLocationSelect]);
+  }, [category]);
 
   // Initialize map
   useEffect(() => {
-    if (!mapRef.current) return;
+    if (!mapContainerRef.current || mapRef.current) return;
 
     mapRef.current = new mapboxgl.Map({
-      container: 'map',
+      container: mapContainerRef.current,
       style: 'mapbox://styles/mapbox/streets-v12',
       center: KC_CENTER,
       zoom: INITIAL_ZOOM
@@ -151,22 +150,22 @@ export default function CultureMap({ onLocationSelect }: CultureMapProps) {
 
     // Add new markers
     locations.forEach((location: Location) => {
-      // Create custom marker element
-      const el = createCustomMarker(location);
+      if (!location.latitude || !location.longitude) return;
 
-      // Create popup content with actual location data
-      const popupContent = document.createElement('div');
-      popupContent.innerHTML = `
+      const marker = new mapboxgl.Marker()
+        .setLngLat([location.longitude, location.latitude])
+        .addTo(mapRef.current!);
+
+      const popup = new mapboxgl.Popup({
+        offset: 25,
+        closeButton: true,
+        closeOnClick: false,
+        maxWidth: '300px',
+        anchor: 'bottom',
+        className: 'custom-popup',
+        focusAfterOpen: false
+      }).setHTML(`
         <div style="padding: 16px; min-width: 300px; min-height: 200px; background: white;">
-          ${location.custom_icon_url ? `
-            <div style="width: 100%; height: 200px; margin-bottom: 16px; border-radius: 8px; overflow: hidden;">
-              <img 
-                src="${location.custom_icon_url}" 
-                alt="${location.title}" 
-                style="width: 100%; height: 100%; object-fit: cover;"
-              />
-            </div>
-          ` : ''}
           <h3 style="font-size: 18px; font-weight: 600; margin-bottom: 8px; color: #1a1a1a;">
             ${location.title}
           </h3>
@@ -197,40 +196,21 @@ export default function CultureMap({ onLocationSelect }: CultureMapProps) {
             ` : ''}
           </div>
         </div>
-      `;
+      `);
 
-      // Create popup with improved configuration
-      const popup = new mapboxgl.Popup({
-        offset: 25,
-        closeButton: true,
-        closeOnClick: false,
-        maxWidth: '300px',
-        anchor: 'bottom',
-        className: 'custom-popup',
-        focusAfterOpen: false
-      });
-
-      // Create marker and explicitly attach popup
-      const marker = new mapboxgl.Marker(el)
-        .setLngLat([location.longitude, location.latitude]);
-
-      // Set popup content and attach to marker
-      popup.setDOMContent(popupContent);
       marker.setPopup(popup);
-      
-      // Add to map
-      if (mapRef.current) {
-        marker.addTo(mapRef.current);
-      }
-
       markersRef.current[location.id] = marker;
+      popupsRef.current[location.id] = popup;
+
+      marker.getElement().addEventListener('click', () => {
+        onLocationSelect(location);
+      });
     });
 
-    // Cleanup function
     return () => {
       cleanupMarkers();
     };
-  }, [locations]);
+  }, [locations, onLocationSelect]);
 
   if (error) {
     return (
@@ -243,11 +223,11 @@ export default function CultureMap({ onLocationSelect }: CultureMapProps) {
   return (
     <div className="relative w-full h-screen">
       <div 
-        ref={mapRef} 
+        ref={mapContainerRef} 
         className="absolute inset-0 w-full h-full"
         style={{ minHeight: '100vh' }}
       />
-      {!loading && (
+      {loading && (
         <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
           <div className="text-lg font-semibold">Loading map...</div>
         </div>
