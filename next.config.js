@@ -65,6 +65,12 @@ const nextConfig = {
       },
     ];
   },
+  // Disable static page generation for error pages
+  async generateStaticParams() {
+    return {
+      exclude: ['/404', '/500', '/_error'],
+    };
+  },
 };
 
 module.exports = nextConfig; 
